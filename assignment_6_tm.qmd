@@ -68,6 +68,12 @@ Use the **`tidytext`** package and three different **sentiment lexicons** (`nrc`
 
     - Use `unnest_tokens()` to tokenize text into individual words.
 
+    ```{r}
+    tidy_books <- original_books |>
+      unnest_tokens(word, text)
+    head(tidy_books)
+    ```
+
 3.  **Sentiment Analysis**
 
     - Filter joy/positive words from **each** of the three sentiment lexicons:
