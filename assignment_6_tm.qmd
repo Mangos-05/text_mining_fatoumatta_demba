@@ -82,6 +82,24 @@ Use the **`tidytext`** package and three different **sentiment lexicons** (`nrc`
       - `afinn` (positive scores ≥ 1)
       - `bing` (positive)
 
+    ```{r}
+    #| message: false
+    library(textdata)
+    library(dplyr)
+    nrc_joy <- get_sentiments("nrc") |>
+      filter(sentiment == "joy")
+
+    afinn_positive <- get_sentiments("afinn") |>
+      filter(value >= 1) 
+
+    bing_positive <- get_sentiments("bing") |>
+      filter(sentiment == "positive")
+
+    nrow(nrc_joy)
+    nrow(afinn_positive)
+    nrow(bing_positive)
+    ```
+
     - Join each with *Emma*'s text and:
 
       - Count word frequency.
