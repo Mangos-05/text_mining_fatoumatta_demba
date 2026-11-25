@@ -64,6 +64,10 @@ Use the **`tidytext`** package and three different **sentiment lexicons** (`nrc`
     ungroup()
     ```
 
+    - ***What:*** Loaded `austen_books()` (a function, not a dataset, so called it directly), grouped by `book`, and created `linenumber` and `chapter`.
+
+    - ***Why:*** Grouping makes line numbers and chapter counts restart for each novel. The regex `^chapter [\\divxlc]` finds headings in both numeric and Roman numeral styles, and `cumsum()` turns those heading locations into a running chapter number. `ungroup()` prevents later steps from accidentally running per book.
+
 2.  **Tokenization**
 
     - Use `unnest_tokens()` to tokenize text into individual words.
@@ -73,6 +77,10 @@ Use the **`tidytext`** package and three different **sentiment lexicons** (`nrc`
       unnest_tokens(word, text)
     head(tidy_books)
     ```
+
+    - ***What:*** Used `unnest_tokens(word, text)` to split each line into one word per row.
+
+    - ***Why:*** The tidy format (one token per row) lets you use `dplyr` verbs like `join` and `count`. It also lowercases and strips punctuation, so "Emma," and "emma" count as the same word.
 
 3.  **Sentiment Analysis**
 
@@ -100,11 +108,71 @@ Use the **`tidytext`** package and three different **sentiment lexicons** (`nrc`
     nrow(bing_positive)
     ```
 
-    - Join each with *Emma*'s text and:
+    - ***What:*** Filtered joy words from `nrc`, positive scores (`value >= 1`) from `afinn`, and positive words from `bing`.
+
+    - ***Why:*** Each lexicon is structured differently: NRC has emotion categories, AFINN has numeric scores, and Bing has binary labels. So each needs a different filter to define "positive." You can also note that this means the three lists differ in size and coverage.
+
+    - **Join each with *Emma*'s text and:**
 
       - Count word frequency.
+
+      <!-- -->
+
       - Filter for frequently occurring words (`n > 50`).
       - Visualize using a **bar chart** (`ggplot2`) and a **word cloud** (`wordcloud`).
+
+    ```{r}
+    library(wordcloud)
+    emma <- tidy_books |>
+      filter(book == "Emma")
+
+    emma_nrc <- emma |>
+      inner_join(nrc_joy, by = "word") |>
+      count(word, sort = TRUE) |>
+      filter(n > 50)
+
+    emma_afinn <- emma |>
+      inner_join(afinn_positive, by = "word") |>
+      count(word, sort = TRUE) |>
+      filter(n > 50)
+
+    emma_bing <- emma |>
+      inner_join(bing_positive, by = "word") |>
+      count(word, sort = TRUE) |>
+      filter(n > 50)
+    ```
+
+    - ***What:*** Used `inner_join()` to keep only Emma words found in each lexicon, then `count()` and `filter(n > 50)`.
+
+    - ***Why:*** An inner join drops words with no sentiment label. The `n > 50` threshold focuses on the words that actually shape the book's tone rather than rare one-offs.
+
+    ```{r}
+    plot_bar <- function(df, title) {
+      ggplot(df, aes(x = reorder(word, n), y = n)) +
+        geom_col(fill = "steelblue") +
+        coord_flip() +
+        labs(title = title, x = "Word", y = "Count")
+    }
+
+    plot_cloud <- function(df, title) {
+      set.seed(123)
+      wordcloud(words = df$word, freq = df$n, min.freq = 1,
+                random.order = FALSE, colors = brewer.pal(8, "Dark2"))
+      title(title)
+    }
+
+    plot_bar(emma_nrc, "Frequent NRC Joy Words in Emma")
+    plot_bar(emma_afinn, "Frequent AFINN Positive Words in Emma")
+    plot_bar(emma_bing, "Frequent Bing Positive Words in Emma")
+
+    plot_cloud(emma_nrc, "NRC Joy Words in Emma")
+    plot_cloud(emma_afinn, "AFINN Positive Words in Emma")
+    plot_cloud(emma_bing, "Bing Positive Words in Emma")
+    ```
+
+    - ***What:*** A bar chart and word cloud per lexicon.
+
+    - ***Why:*** Bar charts show exact counts and make ranking easy. Word clouds give a quick visual impression of relative frequency, but are less precise. Using both gives precision and overview.
 
 4.  **Push to GitHub**
 
