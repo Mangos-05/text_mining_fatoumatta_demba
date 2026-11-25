@@ -45,9 +45,24 @@ Use the **`tidytext`** package and three different **sentiment lexicons** (`nrc`
 
     - Group by book and detect chapter boundaries using regex.
 
-    <!-- -->
+    ```{r}
+    library(stringr)
+    original_books <- austen_books() |>
+      group_by(book)
+    head(original_books)
+    ```
 
     - Create `linenumber` and `chapter` columns.
+
+    ```{r}
+    grouped_books <- austen_books()|>
+      mutate(
+        line_number = row_number(),
+        chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]", 
+                                                ignore_case = TRUE)))
+      ) |>
+    ungroup()
+    ```
 
 2.  **Tokenization**
 
